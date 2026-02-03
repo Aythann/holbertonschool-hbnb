@@ -28,7 +28,8 @@ The goals of this project are to:
 
 The project is organized into several parts, each representing a major step in the development process.
 
-holbertonschool-bnb/
+```text
+holbertonschool-hbnb/
 ├── README.md
 ├── part1/
 │   └── README.md
@@ -36,10 +37,10 @@ holbertonschool-bnb/
 │   └── README.md
 └── part3/
     └── README.md
+```
 
 Each part has its own README file detailing its objectives, tasks, and deliverables.
 
----
 
 ## Project Parts Overview
 
