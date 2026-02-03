@@ -68,7 +68,7 @@ See: part2/README.md
 
 ---
 
-### Part 3 – Authentication, Database & Frontend
+### Part 3 – Authentication & Database
 
 - User authentication and authorization
 - Database integration
