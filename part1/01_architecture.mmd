@@ -1,53 +1,30 @@
 classDiagram
-direction LR
 
-%% =========================
-%% PRESENTATION LAYER
-%% =========================
-namespace Presentation_Layer {
-  class UsersAPI
-  class PlacesAPI
-  class ReviewsAPI
-  class AmenitiesAPI
+class PresentationLayer {
+    <<Interface>>
+    +UserController
+    +PlaceController
+    +AmenityController
+    +ReviewController
 }
 
-%% =========================
-%% BUSINESS LOGIC LAYER
-%% =========================
-namespace Business_Logic_Layer {
-  class HBnBFacade
-  class User
-  class Place
-  class Review
-  class Amenity
+class Facade {
+    +HBnBFacade
 }
 
-%% =========================
-%% PERSISTENCE LAYER
-%% =========================
-namespace Persistence_Layer {
-  class UserRepository
-  class PlaceRepository
-  class ReviewRepository
-  class AmenityRepository
-  class Database
+class BusinessLogicLayer {
+    +UserModel
+    +PlaceModel
+    +AmenityModel
+    +ReviewModel
 }
 
-%% =========================
-%% COMMUNICATION FLOWS
-%% =========================
+class PersistenceLayer {
+    +Repository
+    +InMemoryStorage
+}
 
-UsersAPI --> HBnBFacade
-PlacesAPI --> HBnBFacade
-ReviewsAPI --> HBnBFacade
-AmenitiesAPI --> HBnBFacade
-
-HBnBFacade --> UserRepository
-HBnBFacade --> PlaceRepository
-HBnBFacade --> ReviewRepository
-HBnBFacade --> AmenityRepository
-
-UserRepository --> Database
-PlaceRepository --> Database
-ReviewRepository --> Database
-AmenityRepository o-- Database
+PresentationLayer --> Facade : calls
+Facade --> BusinessLogicLayer : uses models & rules
+Facade --> PersistenceLayer : CRUD operations
+PersistenceLayer --> InMemoryStorage : store data
