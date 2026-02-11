@@ -47,10 +47,8 @@ BaseEntity <|-- Place
 BaseEntity <|-- Review
 BaseEntity <|-- Amenity
 
-%% Relationships
 User "1" --> "0..*" Place : owns
-Place "1" --> "0..*" Review : has
 User "1" --> "0..*" Review : writes
+Place "1" --> "0..*" Review : has
 
-%% Many-to-many between Place and Amenity
 Place "0..*" -- "0..*" Amenity : includes
