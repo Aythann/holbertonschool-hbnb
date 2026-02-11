@@ -1,0 +1,56 @@
+classDiagram
+
+class BaseEntity {
+  <<abstract>>
+  +UUID id
+  +datetime created_at
+  +datetime updated_at
+  +update_timestamp() void
+}
+
+class User {
+  +string first_name
+  +string last_name
+  +string email
+  -string password_hash
+  +bool is_admin
+  +update_profile(first_name, last_name, email) void
+  +set_password(raw_password) void
+  +check_password(raw_password) bool
+}
+
+class Place {
+  +string title
+  +string description
+  +float price
+  +float latitude
+  +float longitude
+  +add_amenity(amenity: Amenity) void
+  +remove_amenity(amenity: Amenity) void
+  +update_details(title, description, price, latitude, longitude) void
+}
+
+class Review {
+  +int rating
+  +string comment
+  +update_review(rating, comment) void
+}
+
+class Amenity {
+  +string name
+  +string description
+  +update_details(name, description) void
+}
+
+BaseEntity <|-- User
+BaseEntity <|-- Place
+BaseEntity <|-- Review
+BaseEntity <|-- Amenity
+
+%% Relationships
+User "1" --> "0..*" Place : owns
+Place "1" --> "0..*" Review : has
+User "1" --> "0..*" Review : writes
+
+%% Many-to-many between Place and Amenity
+Place "0..*" -- "0..*" Amenity : includes
