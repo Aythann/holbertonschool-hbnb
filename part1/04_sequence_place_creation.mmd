@@ -21,7 +21,7 @@ alt if owner not found
   BLL-->>Facade: Error: OwnerNotFound
   Facade-->>API: 404 Not Found
   API-->>Client: 404 {error}
-else else owner exist
+else else
   %% Validate business rules
   BLL->>BLL: validate_place(data)\n(price>0, lat/long ranges)
 
