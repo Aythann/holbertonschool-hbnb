@@ -2,23 +2,21 @@ classDiagram
 
 class PresentationLayer {
   <<Layer>>
-  API
-  Services
+  ServiceAPI
 }
 
-class HBnBFacade {
-  <<Facade>>
-  +register_user()
-  +create_place()
-  +submit_review()
-  +list_places()
-}
-
-class BusinessLogicLayer {
-  <<Layer>>
-  Models
-  BusinessRules
-  Services
+namespace BusinessLogicLayer {
+  class HBnBFacade {
+    <<facade>>
+    +register_user()
+    +create_place()
+    +submit_review()
+    +list_places()
+  }
+  class DomainModel {
+    Models
+    BusinessRules
+  }
 }
 
 class PersistenceLayer {
@@ -27,6 +25,6 @@ class PersistenceLayer {
   Storage
 }
 
-PresentationLayer --> HBnBFacade : &nbsp calls &nbsp
-HBnBFacade --> BusinessLogicLayer : &nbsp orchestrates &nbsp
-BusinessLogicLayer --> PersistenceLayer : &nbsp uses (repositories) &nbsp
+PresentationLayer --> HBnBFacade : &nbsp Calls &nbsp
+HBnBFacade --> DomainModel : &nbsp Orchestrates &nbsp
+DomainModel --> PersistenceLayer : &nbsp Uses (repositories) &nbsp
