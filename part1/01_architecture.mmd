@@ -1,24 +1,32 @@
 classDiagram
 
 class PresentationLayer {
+  <<Layer>>
   API
   Services
 }
 
-class Facade {
-  HBnBFacade
+class HBnBFacade {
+  <<Facade>>
+  +register_user()
+  +create_place()
+  +submit_review()
+  +list_places()
 }
 
 class BusinessLogicLayer {
+  <<Layer>>
   Models
   BusinessRules
+  Services
 }
 
 class PersistenceLayer {
+  <<Layer>>
   Repositories
   Storage
 }
 
-PresentationLayer --> Facade : calls
-Facade --> BusinessLogicLayer : uses
-Facade --> PersistenceLayer : CRUD
+PresentationLayer --> HBnBFacade : calls
+HBnBFacade --> BusinessLogicLayer : orchestrates
+BusinessLogicLayer --> PersistenceLayer : uses (repositories)
