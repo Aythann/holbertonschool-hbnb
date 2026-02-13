@@ -7,15 +7,23 @@ participant PlaceRepo as Persistence(PlaceRepository)
 
 Client->>API: GET /places?min_price&max_price&lat&long&radius&amenity_ids
 API->>API: Validate query params (types, ranges)
-API->>Facade: list_places(filters)
+alt if invalid query params
+  API-->>Client: 400 Bad Request
+else else
+  API->>Facade: list_places(filters)
+  Facade->>BLL: list_places(filters)
 
-Facade->>BLL: list_places(filters)
-BLL->>BLL: validate_filters(filters)
-BLL->>BLL: normalize_filters(filters)\n(defaults, bounds)
+  BLL->>BLL: validate_filters(filters)
 
-BLL->>PlaceRepo: search(filters)
-PlaceRepo-->>BLL: list of places
-
-BLL-->>Facade: places DTO list
-Facade-->>API: 200 OK
-API-->>Client: 200 [{id,title,price,lat,long,amenities},...]
+  alt if invalid business filters
+    BLL-->>Facade: InvalidFilters
+    Facade-->>API: 400 Bad Request
+    API-->>Client: 400 {error}
+  else else
+    BLL->>PlaceRepo: search(filters)
+    PlaceRepo-->>BLL: list of places
+    BLL-->>Facade: places DTO list
+    Facade-->>API: 200 OK
+    API-->>Client: 200 [{id,title,price,lat,long,amenity_ids}, ...]
+  end
+end
