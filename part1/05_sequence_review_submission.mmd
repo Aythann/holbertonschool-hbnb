@@ -7,7 +7,7 @@ participant PlaceRepo as Persistence(PlaceRepository)
 participant UserRepo as Persistence(UserRepository)
 participant ReviewRepo as Persistence(ReviewRepository)
 
-Client->>API: POST /places/{place_id}/reviews {rating,comment}
+Client->>API: POST /places/{place_id}/review {rating,comment}
 API->>API: AuthN/AuthZ + validate payload
 API->>Facade: submit_review(user_id, place_id, data)
 
@@ -16,21 +16,21 @@ Facade->>BLL: submit_review(user_id, place_id, data)
 BLL->>PlaceRepo: get_by_id(place_id)
 PlaceRepo-->>BLL: place / null
 
-alt place not found
+alt if place not found
   BLL-->>Facade: Error: PlaceNotFound
   Facade-->>API: 404 Not Found
   API-->>Client: 404 {error}
-else place ok
+else else
   BLL->>UserRepo: get_by_id(user_id)
-  UserRepo-->>BLL: user / null
+  UserRepo-->>BLL: user or null
 
-  alt user not found
+  alt if user not found
     BLL-->>Facade: Error: UserNotFound
     Facade-->>API: 404 Not Found
     API-->>Client: 404 {error}
-  else ok
+  else else
     BLL->>BLL: validate_rating(1..5)
-    BLL->>BLL: review = Review(user, place, rating, comment)
+    BLL->>BLL: review = review(user, place, rating, comment)
 
     BLL->>ReviewRepo: create(review)
     ReviewRepo-->>BLL: saved review (id,timestamps)
