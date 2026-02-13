@@ -3,26 +3,27 @@ actor Client as User
 participant API as Presentation(API)
 participant Facade as HBnBFacade
 participant BLL as BusinessLogic(UserService)
-participant UserRepo as Persistence(UserRepository)
+participant Repo as Persistence(UserRepository)
 
-Client->>API: POST /users {first_name,last_name,email,password}
-API->>API: Validate payload (required fields, format)
+Client->>API: POST /users
+API->>API: Validate payload
 API->>Facade: register_user(data)
 
 Facade->>BLL: register_user(data)
-BLL->>BLL: validate email format
-BLL->>UserRepo: get_by_email(email)
-UserRepo-->>BLL: user / null
 
-alt email exists
-  BLL-->>Facade: Error: EmailAlreadyExists
+BLL->>BLL: validate email format
+BLL->>Repo: get_by_email(email)
+Repo-->>BLL: user or null
+
+alt if email exists
+  BLL-->>Facade: EmailAlreadyExists
   Facade-->>API: 409 Conflict
-  API-->>Client: 409 {error}
-else ok
-  BLL->>BLL: user = User(...);
-  BLL->>UserRepo: create(user)
-  UserRepo-->>BLL: saved user (id,timestamps)
+  API-->>Client: 409 error
+else else
+  BLL->>BLL: create User entity
+  BLL->>Repo: create(user)
+  Repo-->>BLL: saved user
   BLL-->>Facade: user DTO
   Facade-->>API: 201 Created
-  API-->>Client: 201 {id,first_name,last_name,email,created_at}
+  API-->>Client: 201 response
 end
