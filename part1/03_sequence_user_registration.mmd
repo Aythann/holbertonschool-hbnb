@@ -19,7 +19,7 @@ alt email exists
   Facade-->>API: 409 Conflict
   API-->>Client: 409 {error}
 else ok
-  BLL->>BLL: user = User(...); user.set_password(password)
+  BLL->>BLL: user = User(...);
   BLL->>UserRepo: create(user)
   UserRepo-->>BLL: saved user (id,timestamps)
   BLL-->>Facade: user DTO
