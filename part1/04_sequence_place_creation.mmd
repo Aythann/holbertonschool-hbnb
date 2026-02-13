@@ -12,26 +12,31 @@ API->>API: AuthN/AuthZ + validate payload
 API->>Facade: create_place(owner_id, data)
 
 Facade->>BLL: create_place(owner_id, data)
-BLL->>UserRepo: get_by_id(owner_id)
-UserRepo-->>BLL: owner / null
 
-alt owner not found
+%% Check owner exists
+BLL->>UserRepo: get_by_id(owner_id)
+UserRepo-->>BLL: owner or null
+
+alt if owner not found
   BLL-->>Facade: Error: OwnerNotFound
   Facade-->>API: 404 Not Found
   API-->>Client: 404 {error}
-else owner ok
+else else owner exist
+  %% Validate business rules
   BLL->>BLL: validate_place(data)\n(price>0, lat/long ranges)
 
-  opt amenity_ids provided
+  %% Optional amenities validation
+  opt if amenity_ids provided
     BLL->>AmenityRepo: get_by_ids(amenity_ids)
     AmenityRepo-->>BLL: amenities list
-    alt some amenities missing
+    opt if some amenities missing
       BLL-->>Facade: Error: InvalidAmenity
       Facade-->>API: 400 Bad Request
       API-->>Client: 400 {error}
     end
   end
 
+  %% Create entity and persist
   BLL->>BLL: place = Place(data, owner)
   opt amenities list
     loop each amenity
@@ -40,9 +45,9 @@ else owner ok
   end
 
   BLL->>PlaceRepo: create(place)
-  PlaceRepo-->>BLL: saved place (id,timestamps)
+  PlaceRepo-->>BLL: saved place (id, timestamps)
 
   BLL-->>Facade: place DTO
-  Facade-->>API: 201 Created
+  Facade-->>API: 201 Created (place DTO)
   API-->>Client: 201 {id,title,price,owner_id,amenity_ids}
 end
