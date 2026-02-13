@@ -5,25 +5,39 @@
 
 ## 1. Introduction
 
-This document contains the **UML technical documentation** for the HBnB Evolution project.
+This document provides the UML technical documentation for the HBnB Evolution project.
 
-The purpose of this documentation is to define the **architecture**, **business logic design**, and **interaction flows** of the system **prior to implementation**, using standard UML diagrams.
+Its objective is to define the system’s architecture, core business logic design, and interaction flows before implementation begins.
 
-This document serves as a **design blueprint** for the next development phases.
+By modeling the system using standard UML diagrams, this document:
+
+- Establishes a clear architectural structure  
+- Defines responsibilities across system layers  
+- Ensures separation of concerns  
+- Serves as a reference blueprint for development  
+
+This documentation guarantees that implementation decisions remain aligned with the designed architecture.
 
 ---
 
 ## 2. High-Level Architecture (Package Diagram)
 
-### 2.1 Overview
+### 2.1 Architectural Overview
 
-The HBnB application follows a **three-layered architecture**:
+HBnB Evolution follows a layered architecture composed of three main layers:
 
-- **Presentation Layer**: Manages API endpoints and user interactions.
-- **Business Logic Layer**: Contains the core domain models and business rules.
-- **Persistence Layer**: Handles data storage and retrieval.
+- Presentation Layer – Handles API endpoints, request validation, authentication, and response formatting.
+- Business Logic Layer – Contains domain models and enforces business rules.
+- Persistence Layer – Manages data storage and retrieval through repositories.
 
-A **Facade Pattern** is used to centralize communication between the Presentation Layer and the Business Logic Layer, ensuring clear separation of concerns.
+A Facade Pattern (HBnBFacade) centralizes communication between the Presentation Layer and the Business Logic Layer.
+
+This ensures:
+
+- Decoupling between API and domain logic  
+- Clear responsibility separation  
+- Improved maintainability  
+- Better scalability for future extensions  
 
 ---
 
@@ -31,10 +45,16 @@ A **Facade Pattern** is used to centralize communication between the Presentatio
 
 📄 `01_architecture.mmd`
 
-This UML package diagram illustrates:
-- The separation between application layers
-- The central role of the Facade
-- Communication pathways between system components
+This diagram illustrates:
+
+- The three-layered structure  
+- The central role of HBnBFacade  
+- The communication flow between layers  
+
+The Presentation Layer communicates only with the Facade.  
+The Business Logic Layer interacts with the Persistence Layer through repositories.  
+
+This strict layering prevents cross-layer coupling.
 
 ---
 
@@ -42,39 +62,77 @@ This UML package diagram illustrates:
 
 ### 3.1 Overview
 
-The Business Logic Layer models the main entities of the system:
+The Business Logic Layer models the core entities of the HBnB system:
 
-- `User`
-- `Place`
-- `Review`
-- `Amenity`
+- User  
+- Place  
+- Review  
+- Amenity  
 
 All entities:
-- Use UUIDs as unique identifiers
-- Track creation and update timestamps
-- Inherit from a common abstract base entity
+
+- Use UUID as unique identifiers  
+- Track creation and update timestamps  
+- Inherit from a shared abstract BaseEntity  
+
+This ensures consistency across the domain model.
 
 ---
 
-### 3.2 Detailed Class Diagram
+### 3.2 Design Principles
+
+The Business Logic Layer follows object-oriented design principles:
+
+- Encapsulation of entity behavior  
+- Separation of domain rules from infrastructure  
+- Clear relationship definitions with explicit multiplicities  
+
+Business rules are enforced at this layer rather than in the API or persistence layer.
+
+Examples of enforced rules:
+
+- Email must be unique  
+- Price must be positive  
+- Latitude and longitude must be valid  
+- Review rating must be between 1 and 5  
+
+---
+
+### 3.3 Detailed Class Diagram
 
 📄 `02_class_diagram.mmd`
 
-This UML class diagram describes:
-- Entity attributes and methods
-- Inheritance relationships
-- Associations and multiplicities between entities
+This diagram describes:
+
+- Attributes and methods of each entity  
+- Inheritance from BaseEntity  
+- Relationships between entities  
+- Association multiplicities  
+
+Key relationships:
+
+- One User owns many Places  
+- One Place has many Reviews  
+- One User writes many Reviews  
+- Place and Amenity have a many-to-many relationship  
 
 ---
 
 ## 4. API Interaction Flow (Sequence Diagrams)
 
-This section presents UML sequence diagrams that illustrate interactions between system layers for key API use cases.
+This section presents sequence diagrams illustrating how the system processes key API requests.
 
-Each sequence diagram shows the flow of messages between:
-- Presentation Layer
-- Business Logic Layer (Facade)
-- Persistence Layer
+Each diagram demonstrates:
+
+- Strict layer separation  
+- The role of the Facade  
+- Business rule validation  
+- Repository interaction  
+- Error handling  
+
+The general flow pattern is:
+
+Client → API → Facade → Business Logic → Repository → Response
 
 ---
 
@@ -82,7 +140,13 @@ Each sequence diagram shows the flow of messages between:
 
 📄 `03_sequence_user_registration.mmd`
 
-Illustrates the sequence of interactions required to register a new user.
+This diagram illustrates:
+
+- Payload validation  
+- Email uniqueness verification  
+- User creation  
+- Persistence via UserRepository  
+- Proper error handling (409 Conflict if email exists)  
 
 ---
 
@@ -90,7 +154,13 @@ Illustrates the sequence of interactions required to register a new user.
 
 📄 `04_sequence_place_creation.mmd`
 
-Illustrates the creation of a new place associated with a user.
+This diagram illustrates:
+
+- Authentication and payload validation  
+- Owner verification  
+- Business rule validation (price, coordinates)  
+- Optional amenity validation  
+- Place persistence  
 
 ---
 
@@ -98,7 +168,13 @@ Illustrates the creation of a new place associated with a user.
 
 📄 `05_sequence_review_submission.mmd`
 
-Illustrates the submission of a review by a user for a specific place.
+This diagram illustrates:
+
+- Authentication  
+- Place existence verification  
+- User existence verification  
+- Rating validation  
+- Review creation and persistence  
 
 ---
 
@@ -106,16 +182,62 @@ Illustrates the submission of a review by a user for a specific place.
 
 📄 `06_sequence_list_places.mmd`
 
-Illustrates the retrieval of a list of places based on request criteria.
+This diagram illustrates:
+
+- Query parameter validation  
+- Filter normalization  
+- Repository search execution  
+- Structured response return  
 
 ---
 
-## 5. Conclusion
+## 5. Design Decisions and Rationale
 
-This document provides a complete UML-based representation of the HBnB Evolution system, including:
+### 5.1 Layered Architecture
 
-- High-level architectural design
-- Detailed business logic modeling
-- Interaction flows for core API operations
+The layered architecture was chosen to:
 
-It serves as the reference documentation for the implementation phases of the project.
+- Improve modularity  
+- Facilitate testing  
+- Enable independent evolution of layers  
+- Reduce tight coupling  
+
+---
+
+### 5.2 Facade Pattern
+
+The HBnBFacade:
+
+- Provides a unified entry point for use cases  
+- Orchestrates business operations  
+- Prevents direct interaction between API and domain logic  
+
+This improves clarity and maintainability.
+
+---
+
+### 5.3 Repository Pattern
+
+Repositories abstract data persistence.
+
+This allows:
+
+- Flexibility in database implementation  
+- Clean separation between business rules and storage logic  
+- Easier mocking during testing  
+
+---
+
+## 6. Conclusion
+
+This document provides a complete UML-based representation of the HBnB Evolution system.
+
+It includes:
+
+- High-level architectural design  
+- Detailed domain modeling  
+- Interaction flows for core API operations  
+
+This documentation serves as the structural reference for all implementation phases of the project.
+
+It ensures architectural consistency, maintainability, and clarity throughout development.
