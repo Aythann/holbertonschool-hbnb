@@ -1,0 +1,48 @@
+sequenceDiagram
+actor Client as User
+participant API as Presentation(API)
+participant Facade as HBnBFacade
+participant BLL as BusinessLogic(PlaceService)
+participant UserRepo as Persistence(UserRepository)
+participant AmenityRepo as Persistence(AmenityRepository)
+participant PlaceRepo as Persistence(PlaceRepository)
+
+Client->>API: POST /places {title,description,price,lat,long,amenity_ids}
+API->>API: AuthN/AuthZ + validate payload
+API->>Facade: create_place(owner_id, data)
+
+Facade->>BLL: create_place(owner_id, data)
+BLL->>UserRepo: get_by_id(owner_id)
+UserRepo-->>BLL: owner / null
+
+alt owner not found
+  BLL-->>Facade: Error: OwnerNotFound
+  Facade-->>API: 404 Not Found
+  API-->>Client: 404 {error}
+else owner ok
+  BLL->>BLL: validate_place(data)\n(price>0, lat/long ranges)
+
+  opt amenity_ids provided
+    BLL->>AmenityRepo: get_by_ids(amenity_ids)
+    AmenityRepo-->>BLL: amenities list
+    alt some amenities missing
+      BLL-->>Facade: Error: InvalidAmenity
+      Facade-->>API: 400 Bad Request
+      API-->>Client: 400 {error}
+    end
+  end
+
+  BLL->>BLL: place = Place(data, owner)
+  opt amenities list
+    loop each amenity
+      BLL->>BLL: place.add_amenity(amenity)
+    end
+  end
+
+  BLL->>PlaceRepo: create(place)
+  PlaceRepo-->>BLL: saved place (id,timestamps)
+
+  BLL-->>Facade: place DTO
+  Facade-->>API: 201 Created
+  API-->>Client: 201 {id,title,price,owner_id,amenity_ids}
+end

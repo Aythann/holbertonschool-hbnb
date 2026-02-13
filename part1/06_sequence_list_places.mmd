@@ -1,0 +1,21 @@
+sequenceDiagram
+actor Client as User
+participant API as Presentation(API)
+participant Facade as HBnBFacade
+participant BLL as BusinessLogic(SearchService)
+participant PlaceRepo as Persistence(PlaceRepository)
+
+Client->>API: GET /places?min_price&max_price&lat&long&radius&amenity_ids
+API->>API: Validate query params (types, ranges)
+API->>Facade: list_places(filters)
+
+Facade->>BLL: list_places(filters)
+BLL->>BLL: validate_filters(filters)
+BLL->>BLL: normalize_filters(filters)\n(defaults, bounds)
+
+BLL->>PlaceRepo: search(filters)
+PlaceRepo-->>BLL: list of places
+
+BLL-->>Facade: places DTO list
+Facade-->>API: 200 OK
+API-->>Client: 200 [{id,title,price,lat,long,amenities},...]

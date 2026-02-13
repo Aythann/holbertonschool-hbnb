@@ -1,0 +1,28 @@
+sequenceDiagram
+actor Client as User
+participant API as Presentation(API)
+participant Facade as HBnBFacade
+participant BLL as BusinessLogic(UserService)
+participant UserRepo as Persistence(UserRepository)
+
+Client->>API: POST /users {first_name,last_name,email,password}
+API->>API: Validate payload (required fields, format)
+API->>Facade: register_user(data)
+
+Facade->>BLL: register_user(data)
+BLL->>BLL: validate email format
+BLL->>UserRepo: get_by_email(email)
+UserRepo-->>BLL: user / null
+
+alt email exists
+  BLL-->>Facade: Error: EmailAlreadyExists
+  Facade-->>API: 409 Conflict
+  API-->>Client: 409 {error}
+else ok
+  BLL->>BLL: user = User(...); user.set_password(password)
+  BLL->>UserRepo: create(user)
+  UserRepo-->>BLL: saved user (id,timestamps)
+  BLL-->>Facade: user DTO
+  Facade-->>API: 201 Created
+  API-->>Client: 201 {id,first_name,last_name,email,created_at}
+end
