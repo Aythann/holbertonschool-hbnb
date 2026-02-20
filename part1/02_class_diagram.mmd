@@ -42,6 +42,11 @@ class Amenity {
   +update_details(name, description) void
 }
 
+class PlaceAmenity {
+  +UUID place_id
+  +UUID amenity_id
+}
+
 BaseEntity <|-- User
 BaseEntity <|-- Place
 BaseEntity <|-- Review
@@ -50,5 +55,5 @@ BaseEntity <|-- Amenity
 User "1" --> "0..*" Place : &nbsp owns &nbsp
 User "1" --> "0..*" Review : &nbsp writes &nbsp
 
-Place "1" *-- "0..*" Review : &nbsp has &nbsp
-Place "0..*" -- "0..*" Amenity : &nbsp includes &nbsp
+Place "1" --> "0..*" PlaceAmenity
+Amenity "1" --> "0..*" PlaceAmenity
