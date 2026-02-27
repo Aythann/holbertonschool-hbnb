@@ -33,7 +33,7 @@ The goals of this project are to:
 ---
 
 ## Project Structure
-
+```
 holbertonschool-hbnb/
 ├── README.md
 ├── part1/
@@ -55,6 +55,7 @@ holbertonschool-hbnb/
 │       └── README.md
 └── part3/
     └── README.md
+```
 
 Each part contains its own documentation explaining objectives, architecture, and implementation details.
 
