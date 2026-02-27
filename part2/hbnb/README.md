@@ -57,7 +57,7 @@ This preserves:
 
 ## 3. Project Structure
 
-hbnb/
+```hbnb/
 ├── app/
 │   ├── __init__.py
 │   ├── api/
@@ -90,6 +90,7 @@ hbnb/
 ├── run.py
 ├── requirements.txt
 └── README.md
+```
 
 Each directory has a specific responsibility:
 
