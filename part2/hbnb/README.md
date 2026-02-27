@@ -56,8 +56,8 @@ This preserves:
 ---
 
 ## 3. Project Structure
-
-```hbnb/
+```
+hbnb/
 ├── app/
 │   ├── __init__.py
 │   ├── api/
