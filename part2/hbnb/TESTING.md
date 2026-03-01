@@ -7,16 +7,17 @@
 
 This document describes how the HBnB Evolution – Part 2 implementation is validated through:
 
-- Model validation tests (Business Logic)
+- Model validation tests (Business Logic layer)
 - Facade tests (Business Logic orchestration)
 - API endpoint tests (Presentation layer integration)
 
-The goal is to ensure that:
+The objective is to ensure that:
 
-- Each endpoint respects the expected input/output formats  
-- Status codes follow REST conventions  
-- Validation rules are enforced correctly  
-- Core flows (create, retrieve, update, delete) work as expected  
+- All validation rules are enforced at model and facade level
+- Relationship integrity between entities is respected
+- REST endpoints follow correct input/output formats
+- HTTP status codes comply with REST conventions
+- Full CRUD flows behave as expected
 
 ---
 
@@ -24,87 +25,110 @@ The goal is to ensure that:
 
 ### 2.1 Model Tests (Unit Tests)
 
-File: tests/test_models.py
+File: `tests/test_models.py`
 
 Covers:
 
-- require_str / require_email / require_float / require_int validations
 - Entity instantiation validation:
-  - User: email format
-  - Place: latitude/longitude bounds
-  - Review: rating bounds
-  - Amenity: required fields
+  - User: required fields and email format
+  - Place: price ≥ 0, latitude/longitude bounds
+  - Review: rating between 1 and 5
+  - Amenity: required name
+- Model update validation:
+  - User.update() enforces email format and required fields
+  - Place.update() enforces bounds and numeric constraints
+  - Review.update() enforces rating range
+  - Amenity.update() enforces required name
 
 Expected behavior:
 
-- Valid data creates objects successfully  
-- Invalid data raises ValueError  
+- Valid data creates objects successfully
+- Invalid data raises `ValueError`
+- Update operations respect the same constraints as creation
 
 ---
 
 ### 2.2 Facade Tests (Unit Tests)
 
-File: tests/test_facade.py
+File: `tests/test_facade.py`
 
 Covers:
 
-- User creation + retrieval
+- User creation and retrieval
+- Case-insensitive email lookup
 - Email uniqueness enforcement
-- Amenity creation + retrieval
+- Amenity creation and update validation
 - Place creation:
   - Owner existence validation
   - Amenities existence validation
+- Place update:
+  - Partial update support
+  - Rejection of owner_id modification
 - Review creation:
   - User existence validation
   - Place existence validation
-- Review update and delete flows
-- Reviews listing by place
+- Review update:
+  - Partial update support
+  - Rejection of user_id/place_id modification
+- Review deletion
+- Reviews retrieval by place
 
 Expected behavior:
 
-- Facade raises ValueError / KeyError depending on invalid references  
-- Business rules are enforced at the Facade and model level  
+- `ValueError` is raised when business rules are violated
+- Cross-entity constraints are enforced at the Facade level
+- Relationship integrity is preserved
 
 ---
 
 ### 2.3 API Tests (Integration Tests)
 
-File: tests/test_api.py
+File: `tests/test_api.py`
 
-Covers:
+Covers full endpoint integration:
 
-- Users endpoints:
-  - POST /api/v1/users/
-  - GET /api/v1/users/
-  - GET /api/v1/users/<user_id>
-  - PUT /api/v1/users/<user_id>
-  - Duplicate email (expected 400)
-- Amenities endpoints:
-  - POST /api/v1/amenities/
-  - GET /api/v1/amenities/
-  - GET /api/v1/amenities/<amenity_id>
-  - PUT /api/v1/amenities/<amenity_id>
-- Places endpoints:
-  - POST /api/v1/places/
-  - GET /api/v1/places/
-  - GET /api/v1/places/<place_id>
-  - PUT /api/v1/places/<place_id>
-  - Invalid latitude boundary (expected 400)
-- Reviews endpoints:
-  - POST /api/v1/reviews/
-  - GET /api/v1/reviews/
-  - GET /api/v1/reviews/<review_id>
-  - PUT /api/v1/reviews/<review_id>
-  - DELETE /api/v1/reviews/<review_id>
-  - GET /api/v1/reviews/<review_id> after delete (expected 404)
-- Place reviews endpoint:
-  - GET /api/v1/places/<place_id>/reviews
+#### Users
+- POST `/api/v1/users/`
+- GET `/api/v1/users/`
+- GET `/api/v1/users/<user_id>`
+- PUT `/api/v1/users/<user_id>` (partial update)
+- Duplicate email (expected 400)
+- Invalid email (expected 400)
+- Non-existing user (expected 404)
 
-Expected behavior:
+#### Amenities
+- POST `/api/v1/amenities/`
+- GET `/api/v1/amenities/`
+- GET `/api/v1/amenities/<amenity_id>`
+- PUT `/api/v1/amenities/<amenity_id>`
+- Invalid name (expected 400)
+- Non-existing amenity (expected 404)
+
+#### Places
+- POST `/api/v1/places/`
+- GET `/api/v1/places/` (minimal representation)
+- GET `/api/v1/places/<place_id>` (detailed representation)
+- PUT `/api/v1/places/<place_id>` (partial update)
+- Invalid latitude/longitude (expected 400)
+- Invalid owner or amenity reference (expected 400)
+- Non-existing place (expected 404)
+- GET `/api/v1/places/<place_id>/reviews`
+
+#### Reviews
+- POST `/api/v1/reviews/`
+- GET `/api/v1/reviews/` (minimal representation)
+- GET `/api/v1/reviews/<review_id>`
+- PUT `/api/v1/reviews/<review_id>` (partial update)
+- DELETE `/api/v1/reviews/<review_id>`
+- Invalid rating (expected 400)
+- Forbidden relationship update (expected 400)
+- Non-existing review (expected 404)
+
+Expected HTTP behavior:
 
 - 201 Created on successful POST
 - 200 OK on successful GET/PUT/DELETE
-- 400 Bad Request on invalid payload or validation failure
+- 400 Bad Request on validation failure
 - 404 Not Found on missing resource
 
 ---
@@ -113,43 +137,53 @@ Expected behavior:
 
 ### 3.1 Setup environment
 
-From the project root (part2/hbnb):
+From the project root (`part2/hbnb`):
 
-python3 -m venv venv  
-source venv/bin/activate  
-python3 -m pip install -r requirements.txt  
-
----
-
+```bash
+python3 -m venv venv
+source venv/bin/activate
+python3 -m pip install -r requirements.txt
+```
 ### 3.2 Execute all tests
 
+```bash
 python3 -m unittest discover -s tests -p "test_*.py" -v
-
----
-
+```
 ### 3.3 Generate a test report file
 
+```bash
 python3 -m unittest discover -s tests -p "test_*.py" -v | tee test_report.txt
-
----
-
+```
 ## 4. Test Results
 
-Example successful run:
+Example successful execution:
 
-- 25 tests executed
-- 0 failures
-- 0 errors
+- 25 tests executed  
+- 0 failures  
+- 0 errors  
 
-Output:
+Sample output:
 
 Ran 25 tests in 0.032s
 
 OK
 
+The successful execution confirms that:
+
+- All validation rules are correctly enforced
+- Cross-entity constraints behave as expected
+- REST endpoints return appropriate HTTP status codes
+- Partial updates function correctly
+- Relationship integrity is preserved
+- Error handling (400 / 404 cases) works as intended
+
 ---
 
 ## 5. Notes
 
-- Tests are executed against an in-memory repository (Part 2 requirement).
-- The test suite is designed to be compatible with Part 3, where the persistence layer will be replaced by a database-backed implementation.
+- All tests are executed against the in-memory repository implementation, as required for Part 2.
+- The test suite combines unit tests (models and facade) with integration tests (API endpoints).
+- The architecture allows the persistence layer to be replaced in Part 3 without impacting business logic tests.
+- The separation of concerns ensures that validation remains consistent across model, facade, and API layers.
+
+The test coverage provides confidence that the system behaves reliably under both valid and invalid input scenarios.
