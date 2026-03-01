@@ -1,15 +1,22 @@
 from app.models.base_model import BaseModel
-from app.models.validators import require_str
 
 
 class Amenity(BaseModel):
     def __init__(self, name: str):
         super().__init__()
-        self.name = require_str("name", name, min_len=1, max_len=50)
+
+        if name is None or not str(name).strip():
+            raise ValueError("name cannot be empty")
+
+        self.name = str(name).strip()[:50]
 
     def update(self, data: dict):
+        data = data or {}
         if "name" in data:
-            self.name = require_str("name", data["name"], min_len=1, max_len=50)
+            v = data["name"]
+            if v is None or not str(v).strip():
+                raise ValueError("name cannot be empty")
+            self.name = str(v).strip()[:50]
         self.save()
 
     def to_dict(self):
