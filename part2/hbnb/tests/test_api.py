@@ -1,168 +1,228 @@
 import unittest
-
 from app import create_app
-from app.services.facade import HBnBFacade
-
-import app.services as services_module
-import app.api.v1.users as users_api
-import app.api.v1.amenities as amenities_api
-import app.api.v1.places as places_api
-import app.api.v1.reviews as reviews_api
 
 
 class TestAPI(unittest.TestCase):
+
     def setUp(self):
         self.app = create_app()
-        self.app.testing = True
         self.client = self.app.test_client()
 
-        fresh = HBnBFacade()
+    # ---------------- USERS ----------------
 
-        services_module.facade = fresh
-        users_api.facade = fresh
-        amenities_api.facade = fresh
-        places_api.facade = fresh
-        reviews_api.facade = fresh
+    def test_user_crud_and_validation(self):
+        # Create valid user
+        res = self.client.post("/api/v1/users/", json={
+            "first_name": "John",
+            "last_name": "Doe",
+            "email": "john@example.com"
+        })
+        self.assertEqual(res.status_code, 201)
+        user_id = res.get_json()["id"]
 
-        self.facade = fresh
+        # Invalid email
+        res = self.client.post("/api/v1/users/", json={
+            "first_name": "Bad",
+            "last_name": "Email",
+            "email": "invalid"
+        })
+        self.assertEqual(res.status_code, 400)
 
-    def test_users_crud(self):
-        # POST create
-        resp = self.client.post(
-            "/api/v1/users/",
-            json={"first_name": "John", "last_name": "Doe", "email": "john.doe@example.com"},
-        )
-        self.assertEqual(resp.status_code, 201)
-        user = resp.get_json()
-        self.assertIn("id", user)
-        user_id = user["id"]
+        # Duplicate email
+        res = self.client.post("/api/v1/users/", json={
+            "first_name": "John",
+            "last_name": "Dup",
+            "email": "john@example.com"
+        })
+        self.assertEqual(res.status_code, 400)
 
-        # GET list
-        resp = self.client.get("/api/v1/users/")
-        self.assertEqual(resp.status_code, 200)
-        data = resp.get_json()
-        self.assertIsInstance(data, list)
-        self.assertTrue(any(u["id"] == user_id for u in data))
+        # Get existing
+        res = self.client.get(f"/api/v1/users/{user_id}")
+        self.assertEqual(res.status_code, 200)
 
-        # GET by id
-        resp = self.client.get(f"/api/v1/users/{user_id}")
-        self.assertEqual(resp.status_code, 200)
+        # Get non-existing
+        res = self.client.get("/api/v1/users/invalid")
+        self.assertEqual(res.status_code, 404)
 
-        # PUT update (validate=True => payload complet requis)
-        resp = self.client.put(
-            f"/api/v1/users/{user_id}",
-            json={"first_name": "Jane", "last_name": "Doe", "email": "jane.doe@example.com"},
-        )
-        self.assertEqual(resp.status_code, 200)
+        # Partial update
+        res = self.client.put(f"/api/v1/users/{user_id}", json={
+            "first_name": "Johnny"
+        })
+        self.assertEqual(res.status_code, 200)
 
-        # Duplicate email => 400 (conforme doc)
-        resp = self.client.post(
-            "/api/v1/users/",
-            json={"first_name": "X", "last_name": "Y", "email": "jane.doe@example.com"},
-        )
-        self.assertEqual(resp.status_code, 400)
+        # Invalid update
+        res = self.client.put(f"/api/v1/users/{user_id}", json={
+            "email": "bad"
+        })
+        self.assertEqual(res.status_code, 400)
 
-    def test_amenities_crud(self):
-        # POST create
-        resp = self.client.post("/api/v1/amenities/", json={"name": "Wi-Fi"})
-        self.assertEqual(resp.status_code, 201)
-        amenity = resp.get_json()
-        amenity_id = amenity["id"]
+        # Update non-existing
+        res = self.client.put("/api/v1/users/invalid", json={
+            "first_name": "X"
+        })
+        self.assertEqual(res.status_code, 404)
 
-        # GET list
-        resp = self.client.get("/api/v1/amenities/")
-        self.assertEqual(resp.status_code, 200)
+    # ---------------- AMENITIES ----------------
 
-        # GET by id
-        resp = self.client.get(f"/api/v1/amenities/{amenity_id}")
-        self.assertEqual(resp.status_code, 200)
+    def test_amenity_crud(self):
+        res = self.client.post("/api/v1/amenities/", json={"name": "WiFi"})
+        self.assertEqual(res.status_code, 201)
+        amenity_id = res.get_json()["id"]
 
-        # PUT update
-        resp = self.client.put(f"/api/v1/amenities/{amenity_id}", json={"name": "Air Conditioning"})
-        self.assertEqual(resp.status_code, 200)
+        # Invalid name
+        res = self.client.post("/api/v1/amenities/", json={"name": ""})
+        self.assertEqual(res.status_code, 400)
 
-    def test_places_and_reviews_flow(self):
-        # Create user
-        resp = self.client.post(
-            "/api/v1/users/",
-            json={"first_name": "John", "last_name": "Doe", "email": "john.doe@example.com"},
-        )
-        self.assertEqual(resp.status_code, 201)
-        user_id = resp.get_json()["id"]
+        # Get existing
+        res = self.client.get(f"/api/v1/amenities/{amenity_id}")
+        self.assertEqual(res.status_code, 200)
 
-        # Create amenity
-        resp = self.client.post("/api/v1/amenities/", json={"name": "Wi-Fi"})
-        self.assertEqual(resp.status_code, 201)
-        amenity_id = resp.get_json()["id"]
+        # Get non-existing
+        res = self.client.get("/api/v1/amenities/invalid")
+        self.assertEqual(res.status_code, 404)
 
-        # Create place
-        place_payload = {
-            "title": "Cozy Apartment",
-            "description": "A nice place to stay",
-            "price": 100.0,
-            "latitude": 37.7749,
-            "longitude": -122.4194,
-            "owner_id": user_id,
-            "amenities": [amenity_id],
-        }
-        resp = self.client.post("/api/v1/places/", json=place_payload)
-        self.assertEqual(resp.status_code, 201)
-        place_id = resp.get_json()["id"]
+        # Update
+        res = self.client.put(f"/api/v1/amenities/{amenity_id}", json={"name": "Pool"})
+        self.assertEqual(res.status_code, 200)
 
-        # GET place
-        resp = self.client.get(f"/api/v1/places/{place_id}")
-        self.assertEqual(resp.status_code, 200)
+        # Invalid update
+        res = self.client.put(f"/api/v1/amenities/{amenity_id}", json={"name": ""})
+        self.assertEqual(res.status_code, 400)
 
-        # Invalid latitude => 400
-        bad_place = dict(place_payload)
-        bad_place["latitude"] = 999.0
-        resp = self.client.post("/api/v1/places/", json=bad_place)
-        self.assertEqual(resp.status_code, 400)
+    # ---------------- PLACES ----------------
+
+    def test_place_crud_and_validation(self):
+        # Create user + amenity first
+        user = self.client.post("/api/v1/users/", json={
+            "first_name": "Owner",
+            "last_name": "Test",
+            "email": "owner@example.com"
+        }).get_json()
+
+        amenity = self.client.post("/api/v1/amenities/", json={
+            "name": "WiFi"
+        }).get_json()
+
+        # Create valid place
+        res = self.client.post("/api/v1/places/", json={
+            "title": "Nice Place",
+            "description": "Cool",
+            "price": 100,
+            "latitude": 45.0,
+            "longitude": 3.0,
+            "owner_id": user["id"],
+            "amenities": [amenity["id"]]
+        })
+        self.assertEqual(res.status_code, 201)
+        place_id = res.get_json()["id"]
+
+        # Invalid latitude
+        res = self.client.post("/api/v1/places/", json={
+            "title": "Bad Place",
+            "description": "Invalid",
+            "price": 100,
+            "latitude": 200,
+            "longitude": 3,
+            "owner_id": user["id"],
+            "amenities": []
+        })
+        self.assertEqual(res.status_code, 400)
+
+        # Get list (minimal fields check)
+        res = self.client.get("/api/v1/places/")
+        self.assertEqual(res.status_code, 200)
+        place = res.get_json()[0]
+        self.assertIn("id", place)
+        self.assertIn("title", place)
+        self.assertIn("latitude", place)
+        self.assertIn("longitude", place)
+        self.assertNotIn("price", place)
+
+        # Partial update
+        res = self.client.put(f"/api/v1/places/{place_id}", json={
+            "title": "Updated Title"
+        })
+        self.assertEqual(res.status_code, 200)
+
+        # Forbidden owner update
+        res = self.client.put(f"/api/v1/places/{place_id}", json={
+            "owner_id": user["id"]
+        })
+        self.assertEqual(res.status_code, 400)
+
+        # Non-existing place
+        res = self.client.get("/api/v1/places/invalid")
+        self.assertEqual(res.status_code, 404)
+
+        # Reviews for non-existing place
+        res = self.client.get("/api/v1/places/invalid/reviews")
+        self.assertEqual(res.status_code, 404)
+
+    # ---------------- REVIEWS ----------------
+
+    def test_review_crud_and_validation(self):
+        user = self.client.post("/api/v1/users/", json={
+            "first_name": "User",
+            "last_name": "Review",
+            "email": "review@example.com"
+        }).get_json()
+
+        place = self.client.post("/api/v1/places/", json={
+            "title": "Review Place",
+            "description": "Test",
+            "price": 50,
+            "latitude": 40,
+            "longitude": 2,
+            "owner_id": user["id"],
+            "amenities": []
+        }).get_json()
 
         # Create review
-        review_payload = {
-            "text": "Great place to stay!",
+        res = self.client.post("/api/v1/reviews/", json={
+            "text": "Great",
             "rating": 5,
-            "user_id": user_id,
-            "place_id": place_id,
-        }
-        resp = self.client.post("/api/v1/reviews/", json=review_payload)
-        self.assertEqual(resp.status_code, 201)
-        review_id = resp.get_json()["id"]
+            "user_id": user["id"],
+            "place_id": place["id"]
+        })
+        self.assertEqual(res.status_code, 201)
+        review_id = res.get_json()["id"]
 
-        # GET reviews list
-        resp = self.client.get("/api/v1/reviews/")
-        self.assertEqual(resp.status_code, 200)
+        # Invalid rating
+        res = self.client.post("/api/v1/reviews/", json={
+            "text": "Bad",
+            "rating": 10,
+            "user_id": user["id"],
+            "place_id": place["id"]
+        })
+        self.assertEqual(res.status_code, 400)
 
-        # GET review by id
-        resp = self.client.get(f"/api/v1/reviews/{review_id}")
-        self.assertEqual(resp.status_code, 200)
+        # List minimal fields
+        res = self.client.get("/api/v1/reviews/")
+        review = res.get_json()[0]
+        self.assertIn("id", review)
+        self.assertIn("text", review)
+        self.assertIn("rating", review)
+        self.assertNotIn("user_id", review)
 
-        # GET place reviews
-        resp = self.client.get(f"/api/v1/places/{place_id}/reviews")
-        self.assertEqual(resp.status_code, 200)
-        reviews = resp.get_json()
-        self.assertTrue(any(r["id"] == review_id for r in reviews))
+        # Partial update
+        res = self.client.put(f"/api/v1/reviews/{review_id}", json={
+            "text": "Updated"
+        })
+        self.assertEqual(res.status_code, 200)
 
-        # PUT review (validate=True => payload complet requis)
-        resp = self.client.put(
-            f"/api/v1/reviews/{review_id}",
-            json={
-                "text": "Amazing stay!",
-                "rating": 4,
-                "user_id": user_id,
-                "place_id": place_id,
-            },
-        )
-        self.assertEqual(resp.status_code, 200)
+        # Forbidden relation update
+        res = self.client.put(f"/api/v1/reviews/{review_id}", json={
+            "user_id": user["id"]
+        })
+        self.assertEqual(res.status_code, 400)
 
-        # DELETE review
-        resp = self.client.delete(f"/api/v1/reviews/{review_id}")
-        self.assertEqual(resp.status_code, 200)
+        # Delete
+        res = self.client.delete(f"/api/v1/reviews/{review_id}")
+        self.assertEqual(res.status_code, 200)
 
-        # GET deleted => 404
-        resp = self.client.get(f"/api/v1/reviews/{review_id}")
-        self.assertEqual(resp.status_code, 404)
+        # Delete non-existing
+        res = self.client.delete(f"/api/v1/reviews/{review_id}")
+        self.assertEqual(res.status_code, 404)
 
 
 if __name__ == "__main__":
