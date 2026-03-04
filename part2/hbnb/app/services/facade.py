@@ -31,7 +31,6 @@ class HBnBFacade:
         return self.user_repo.get_all()
 
     def update_user(self, user_id, user_data):
-        # le modèle User.update gère la validation
         return self.user_repo.update(user_id, user_data)
 
     # ------- Amenities -------
@@ -50,7 +49,6 @@ class HBnBFacade:
         amenity = self.get_amenity(amenity_id)
         if not amenity:
             return None
-        # le modèle Amenity.update gère la validation
         self.amenity_repo.update(amenity_id, amenity_data)
         return amenity
 
@@ -80,17 +78,14 @@ class HBnBFacade:
         if not place:
             return None
 
-        # Owner update non demandé dans la doc -> on refuse si quelqu'un essaye
         if "owner_id" in (place_data or {}):
             raise ValueError("owner_id cannot be updated")
 
-        # Validation des amenities IDs si présentes
         if "amenities" in (place_data or {}):
             for aid in (place_data.get("amenities") or []):
                 if not self.amenity_repo.get(aid):
                     raise ValueError("Invalid amenity id")
 
-        # le modèle Place.update gère validations price/lat/lon/title...
         self.place_repo.update(place_id, place_data)
         return place
 
