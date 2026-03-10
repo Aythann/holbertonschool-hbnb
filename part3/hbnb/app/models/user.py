@@ -25,6 +25,7 @@ class User(BaseModel):
         self.last_name = str(last_name).strip()[:50]
         self.email = email_clean
         self.is_admin = bool(is_admin)
+        self.hash_password(password)
 
         self.places = []
         self.reviews = []
