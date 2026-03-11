@@ -87,13 +87,13 @@ hbnb/
 └── README.md
 ```
 
-Directory responsibilities:
-
-- api/: REST endpoints
-- models/: SQLAlchemy models and validation
-- services/: Facade orchestration
-- persistence/: Repository abstraction
-- config.py: Environment configuration
+| Directory      | Responsibility                   |
+| -------------- | -------------------------------- |
+| `api/`         | REST endpoints                   |
+| `models/`      | SQLAlchemy models and validation |
+| `services/`    | Facade orchestration             |
+| `persistence/` | Repository abstraction           |
+| `config.py`    | Environment configuration        |
 
 ---
 
