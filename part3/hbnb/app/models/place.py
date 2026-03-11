@@ -4,8 +4,18 @@ from app.models.base_model import BaseModel
 
 place_amenity = db.Table(
     "place_amenity",
-    db.Column("place_id", db.String(36), db.ForeignKey("places.id"), primary_key=True),
-    db.Column("amenity_id", db.String(36), db.ForeignKey("amenities.id"), primary_key=True),
+    db.Column(
+        "place_id",
+        db.String(36),
+        db.ForeignKey("places.id"),
+        primary_key=True
+    ),
+    db.Column(
+        "amenity_id",
+        db.String(36),
+        db.ForeignKey("amenities.id"),
+        primary_key=True
+    ),
 )
 
 
@@ -13,11 +23,19 @@ class Place(BaseModel):
     __tablename__ = "places"
 
     title = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.String(1000), nullable=False, default="")
+    description = db.Column(
+        db.String(1000),
+        nullable=False,
+        default=""
+    )
     price = db.Column(db.Float, nullable=False)
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
-    owner_id = db.Column(db.String(36), db.ForeignKey("users.id"), nullable=False)
+    owner_id = db.Column(
+        db.String(36),
+        db.ForeignKey("users.id"),
+        nullable=False
+    )
 
     reviews = db.relationship(
         "Review",
@@ -60,7 +78,9 @@ class Place(BaseModel):
             raise ValueError("owner_id cannot be empty")
 
         self.title = str(title).strip()[:100]
-        self.description = (str(description).strip() if description is not None else "")[:1000]
+        self.description = (
+            str(description).strip() if description is not None else ""
+        )[:1000]
         self.price = float(price)
         self.latitude = lat
         self.longitude = lon
@@ -77,7 +97,9 @@ class Place(BaseModel):
 
         if "description" in data:
             value = data["description"]
-            self.description = (str(value).strip() if value is not None else "")[:1000]
+            self.description = (
+                str(value).strip() if value is not None else ""
+            )[:1000]
 
         if "price" in data:
             value = data["price"]
