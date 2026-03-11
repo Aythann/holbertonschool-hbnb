@@ -1,8 +1,9 @@
 from flask_restx import Namespace, Resource, fields
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app.services import facade
 
 api = Namespace("users", description="User operations")
+api = Namespace('admin', description='Admin operations')
 
 user_model = api.model(
     "User",
@@ -78,13 +79,30 @@ class UserResource(Resource):
     @api.response(404, "User not found")
     @api.response(400, "Invalid input data")
     @api.response(400, "Email already registered")
+    @api.response(403, "Admin privileges required")
+
+    @jwt_required()
     def put(self, user_id):
         """Update user information"""
-        user_data = api.payload or {}
+        current_jwt = get_jwt()
+        current_identity = get_jwt_identity()
+        is_admin = current_jwt.get("is_admin", False)
 
         user = facade.get_user(user_id)
         if not user:
             return {"error": "User not found"}, 404
+          
+        user_data = api.payload or {}
+
+        if is_admin:
+            try:
+                updated_user = facade.update_user(user_id, user_data)
+            except ValueError as e:
+                return {"error": str(e)}, 400
+            return updated_user.to_dict(), 200  
+
+        if str(user.id) != str(current_identity):
+          return {"error": "Admin privileges required"}, 403
 
         if "email" in user_data:
             incoming_email = _normalize_email(user_data.get("email"))
