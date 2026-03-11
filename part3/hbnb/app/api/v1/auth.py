@@ -23,7 +23,11 @@ class Login(Resource):
         credentials = api.payload or {}
 
         user = facade.get_user_by_email(credentials.get("email"))
-        if not user or not user.verify_password(credentials.get("password", "")):
+        if not user:
+            return {"error": "Invalid credentials"}, 401
+
+        password = credentials.get("password", "")
+        if not user.verify_password(password):
             return {"error": "Invalid credentials"}, 401
 
         access_token = create_access_token(
