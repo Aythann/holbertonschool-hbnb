@@ -1,7 +1,37 @@
+from app import db
 from app.models.base_model import BaseModel
 
 
+place_amenity = db.Table(
+    "place_amenity",
+    db.Column("place_id", db.String(36), db.ForeignKey("places.id"), primary_key=True),
+    db.Column("amenity_id", db.String(36), db.ForeignKey("amenities.id"), primary_key=True),
+)
+
+
 class Place(BaseModel):
+    __tablename__ = "places"
+
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(1000), nullable=False, default="")
+    price = db.Column(db.Float, nullable=False)
+    latitude = db.Column(db.Float, nullable=False)
+    longitude = db.Column(db.Float, nullable=False)
+    owner_id = db.Column(db.String(36), db.ForeignKey("users.id"), nullable=False)
+
+    reviews = db.relationship(
+        "Review",
+        backref="place",
+        lazy=True,
+        cascade="all, delete-orphan",
+    )
+    amenities = db.relationship(
+        "Amenity",
+        secondary=place_amenity,
+        lazy="subquery",
+        backref=db.backref("places", lazy=True),
+    )
+
     def __init__(
         self,
         title: str,
@@ -10,10 +40,7 @@ class Place(BaseModel):
         latitude: float,
         longitude: float,
         owner_id: str,
-        amenities=None,
     ):
-        super().__init__()
-
         if title is None or not str(title).strip():
             raise ValueError("title cannot be empty")
 
@@ -29,50 +56,49 @@ class Place(BaseModel):
         if not -180.0 <= lon <= 180.0:
             raise ValueError("longitude must be between -180 and 180")
 
+        if owner_id is None or not str(owner_id).strip():
+            raise ValueError("owner_id cannot be empty")
+
         self.title = str(title).strip()[:100]
         self.description = (str(description).strip() if description is not None else "")[:1000]
         self.price = float(price)
         self.latitude = lat
         self.longitude = lon
-
-        self.owner_id = owner_id
-        self.amenities = list(amenities or [])
-        self.reviews = []
+        self.owner_id = str(owner_id).strip()
 
     def update(self, data: dict):
         data = data or {}
 
         if "title" in data:
-            v = data["title"]
-            if v is None or not str(v).strip():
+            value = data["title"]
+            if value is None or not str(value).strip():
                 raise ValueError("title cannot be empty")
-            self.title = str(v).strip()[:100]
+            self.title = str(value).strip()[:100]
 
         if "description" in data:
-            v = data["description"]
-            self.description = (str(v).strip() if v is not None else "")[:1000]
+            value = data["description"]
+            self.description = (str(value).strip() if value is not None else "")[:1000]
 
         if "price" in data:
-            v = data["price"]
-            if v is None or float(v) < 0:
+            value = data["price"]
+            if value is None or float(value) < 0:
                 raise ValueError("price must be positive")
-            self.price = float(v)
+            self.price = float(value)
 
         if "latitude" in data:
-            v = float(data["latitude"])
-            if not -90.0 <= v <= 90.0:
+            value = float(data["latitude"])
+            if not -90.0 <= value <= 90.0:
                 raise ValueError("latitude must be between -90 and 90")
-            self.latitude = v
+            self.latitude = value
 
         if "longitude" in data:
-            v = float(data["longitude"])
-            if not -180.0 <= v <= 180.0:
+            value = float(data["longitude"])
+            if not -180.0 <= value <= 180.0:
                 raise ValueError("longitude must be between -180 and 180")
-            self.longitude = v
+            self.longitude = value
 
-        if "amenities" in data:
-            self.amenities = list(data.get("amenities") or [])
-
+        if "owner_id" in data:
+            raise ValueError("owner_id cannot be updated")
 
         self.save()
 
@@ -85,5 +111,5 @@ class Place(BaseModel):
             "latitude": self.latitude,
             "longitude": self.longitude,
             "owner_id": self.owner_id,
-            "amenities": self.amenities,
+            "amenities": [amenity.id for amenity in self.amenities],
         }
