@@ -2,8 +2,7 @@ from flask_restx import Namespace, Resource, fields
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app.services import facade
 
-api = Namespace("users", description="User operations")
-api = Namespace('admin', description='Admin operations')
+api = Namespace('users', description='User operations')
 
 user_model = api.model(
     "User",
@@ -40,6 +39,10 @@ class UserList(Resource):
     def post(self):
         """Register a new user"""
         user_data = api.payload or {}
+        current_jwt = get_jwt()
+        
+        if not current_jwt.get("is_admin", False):
+          return {"error": "Admin privileges required"}, 403
 
         email_norm = _normalize_email(user_data.get("email"))
         existing_user = facade.get_user_by_email(email_norm) if email_norm else None
@@ -102,7 +105,7 @@ class UserResource(Resource):
             return updated_user.to_dict(), 200  
 
         if str(user.id) != str(current_identity):
-          return {"error": "Admin privileges required"}, 403
+            return {"error": "Admin privileges required"}, 403
 
         if "email" in user_data:
             incoming_email = _normalize_email(user_data.get("email"))
