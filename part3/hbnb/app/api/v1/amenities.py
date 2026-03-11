@@ -17,10 +17,10 @@ class AmenityList(Resource):
     @api.expect(amenity_model, validate=True)
     @api.response(201, "Amenity successfully created")
     @api.response(400, "Invalid input data")
-    
+    @api.response(403, "Admin privileges required")
     @jwt_required()
     def post(self):
-        """Register a new amenity"""
+        """Create a new amenity (admin only)"""
         current_jwt = get_jwt()
 
         if not current_jwt.get("is_admin", False):
@@ -35,9 +35,9 @@ class AmenityList(Resource):
 
     @api.response(200, "List of amenities retrieved successfully")
     def get(self):
-        """Retrieve a list of all amenities"""
+        """Retrieve all amenities"""
         amenities = facade.get_all_amenities()
-        return [a.to_dict() for a in amenities], 200
+        return [amenity.to_dict() for amenity in amenities], 200
 
 
 @api.route("/<amenity_id>")
@@ -53,13 +53,14 @@ class AmenityResource(Resource):
 
     @api.expect(amenity_model, validate=True)
     @api.response(200, "Amenity updated successfully")
-    @api.response(404, "Amenity not found")
     @api.response(400, "Invalid input data")
-
+    @api.response(403, "Admin privileges required")
+    @api.response(404, "Amenity not found")
     @jwt_required()
     def put(self, amenity_id):
-        """Update an amenity's information"""
+        """Update an amenity (admin only)"""
         current_jwt = get_jwt()
+
         if not current_jwt.get("is_admin", False):
             return {"error": "Admin privileges required"}, 403
 
@@ -68,11 +69,8 @@ class AmenityResource(Resource):
             return {"error": "Amenity not found"}, 404
 
         try:
-            amenity = facade.update_amenity(amenity_id, api.payload)
+            updated_amenity = facade.update_amenity(amenity_id, api.payload)
         except ValueError as e:
             return {"error": str(e)}, 400
 
-        if not amenity:
-            return {"error": "Amenity not found"}, 404
-
-        return {"message": "Amenity updated successfully"}, 200
+        return updated_amenity.to_dict(), 200
