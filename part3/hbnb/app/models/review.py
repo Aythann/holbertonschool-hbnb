@@ -5,13 +5,25 @@ from app.models.base_model import BaseModel
 class Review(BaseModel):
     __tablename__ = "reviews"
     __table_args__ = (
-        db.UniqueConstraint("user_id", "place_id", name="uq_review_user_place"),
+        db.UniqueConstraint(
+            "user_id",
+            "place_id",
+            name="uq_review_user_place"
+        ),
     )
 
     text = db.Column(db.String(2000), nullable=False)
     rating = db.Column(db.Integer, nullable=False)
-    user_id = db.Column(db.String(36), db.ForeignKey("users.id"), nullable=False)
-    place_id = db.Column(db.String(36), db.ForeignKey("places.id"), nullable=False)
+    user_id = db.Column(
+        db.String(36),
+        db.ForeignKey("users.id"),
+        nullable=False
+    )
+    place_id = db.Column(
+        db.String(36),
+        db.ForeignKey("places.id"),
+        nullable=False
+    )
 
     def __init__(
         self,
@@ -23,7 +35,12 @@ class Review(BaseModel):
         if text is None or not str(text).strip():
             raise ValueError("text cannot be empty")
 
-        if isinstance(rating, bool) or not isinstance(rating, int) or not 1 <= rating <= 5:
+        invalid_rating = (
+            isinstance(rating, bool)
+            or not isinstance(rating, int)
+            or not 1 <= rating <= 5
+        )
+        if invalid_rating:
             raise ValueError("rating must be between 1 and 5")
 
         if user_id is None or not str(user_id).strip():
@@ -48,7 +65,12 @@ class Review(BaseModel):
 
         if "rating" in data:
             value = data["rating"]
-            if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 5:
+            invalid_rating = (
+                isinstance(value, bool)
+                or not isinstance(value, int)
+                or not 1 <= value <= 5
+            )
+            if invalid_rating:
                 raise ValueError("rating must be between 1 and 5")
             self.rating = value
 
