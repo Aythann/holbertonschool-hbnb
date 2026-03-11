@@ -2,12 +2,18 @@ from flask_restx import Namespace, Resource, fields
 from flask_jwt_extended import jwt_required, get_jwt
 from app.services import facade
 
-api = Namespace("amenities", description="Amenity operations")
+api = Namespace(
+    "amenities",
+    description="Amenity operations"
+)
 
 amenity_model = api.model(
     "Amenity",
     {
-        "name": fields.String(required=True, description="Name of the amenity"),
+        "name": fields.String(
+            required=True,
+            description="Name of the amenity"
+        ),
     },
 )
 
@@ -69,7 +75,10 @@ class AmenityResource(Resource):
             return {"error": "Amenity not found"}, 404
 
         try:
-            updated_amenity = facade.update_amenity(amenity_id, api.payload)
+            updated_amenity = facade.update_amenity(
+                amenity_id,
+                api.payload
+            )
         except ValueError as e:
             return {"error": str(e)}, 400
 
