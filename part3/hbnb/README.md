@@ -218,8 +218,6 @@ The following diagram represents the structure of the database and the relations
 erDiagram
     USER {
         string id PK
-        datetime created_at
-        datetime updated_at
         string first_name
         string last_name
         string email UK
@@ -229,8 +227,6 @@ erDiagram
 
     PLACE {
         string id PK
-        datetime created_at
-        datetime updated_at
         string title
         string description
         float price
@@ -241,8 +237,6 @@ erDiagram
 
     REVIEW {
         string id PK
-        datetime created_at
-        datetime updated_at
         string text
         int rating
         string user_id FK
@@ -251,10 +245,19 @@ erDiagram
 
     AMENITY {
         string id PK
-        datetime created_at
-        datetime updated_at
         string name UK
     }
+
+    PLACE_AMENITY {
+        string place_id PK, FK
+        string amenity_id PK, FK
+    }
+
+    USER ||--o{ PLACE : owns
+    USER ||--o{ REVIEW : writes
+    PLACE ||--o{ REVIEW : receives
+    PLACE ||--o{ PLACE_AMENITY : has
+    AMENITY ||--o{ PLACE_AMENITY : links
 ```
 Notes :
 
