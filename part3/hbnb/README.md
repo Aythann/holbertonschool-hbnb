@@ -19,6 +19,8 @@ The objectives of this phase are:
 - Ensure **data integrity through database constraints**
 - Preserve the **layered architecture**
 
+This documentation also includes a **Mermaid.js Entity-Relationship diagram** to visualize the database structure.
+
 ---
 
 ## 2. High-Level Architecture (Implementation View)
@@ -37,7 +39,9 @@ The **Facade Pattern (`HBnBFacade`)** continues to orchestrate interactions betw
 
 Flow:
 
+```bash
 Client → API → Facade → Models → Repository → Database
+```
 
 Communication rules remain the same:
 
@@ -80,8 +84,14 @@ hbnb/
 │   │   ├── __init__.py
 │   │   └── facade.py
 │   └── persistence/
-│       └── repository.py
+│       ├── repository.py
+│       └── user_repository.py
+├── sql/
+│   ├── schema.sql
+│   ├── seed.sql
+│   └── test_queries.sql
 ├── config.py
+├── erdiagram.mmd
 ├── run.py
 ├── requirements.txt
 └── README.md
@@ -197,6 +207,60 @@ Attributes:
 - name
 
 Used through a **many-to-many relationship** with Places.
+
+---
+
+### 6.5 Database ER Diagram
+
+The following diagram represents the structure of the database and the relationships between entities.
+
+```mermaid
+erDiagram
+    USER {
+        string id PK
+        datetime created_at
+        datetime updated_at
+        string first_name
+        string last_name
+        string email UK
+        string password
+        boolean is_admin
+    }
+
+    PLACE {
+        string id PK
+        datetime created_at
+        datetime updated_at
+        string title
+        string description
+        float price
+        float latitude
+        float longitude
+        string owner_id FK
+    }
+
+    REVIEW {
+        string id PK
+        datetime created_at
+        datetime updated_at
+        string text
+        int rating
+        string user_id FK
+        string place_id FK
+    }
+
+    AMENITY {
+        string id PK
+        datetime created_at
+        datetime updated_at
+        string name UK
+    }
+```
+Notes :
+
+- All entities inherit created_at and updated_at from BaseModel.
+- The PLACE_AMENITY table implements a many-to-many relationship between Place and Amenity.
+- A unique constraint ensures that a user can only review a place once.
 
 ---
 
@@ -339,7 +403,29 @@ python3 run.py
 ```
 ---
 
-## 12. Conclusion
+## 12. SQL Scripts
+
+The project also includes SQL scripts for schema creation, seed data, and manual testing.
+
+Schema creation
+```bash
+sql/schema.sql
+```
+
+Seed data
+```bash
+sql/seed.sql
+```
+
+Test queries
+```bash
+sql/test_queries.sql
+```
+These scripts reflect the relational structure used in the application and can be used for verification or debugging.
+
+---
+
+## 13. Conclusion
 
 HBnB Evolution – Part 3 significantly enhances the application by introducing **database persistence and authentication**.
 
